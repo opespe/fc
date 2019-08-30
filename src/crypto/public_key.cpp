@@ -24,11 +24,18 @@ namespace fc { namespace crypto {
    {
    }
 
+   int get_acceptable_prefix_len(const std::string& str) {      
+      if (prefix_matches(config::public_key_opes_prefix, str)) return const_strlen(config::public_key_opes_prefix);
+      if (prefix_matches(config::public_key_legacy_prefix, str)) return const_strlen(config::public_key_legacy_prefix);
+      return 0;
+   }
+
+
    static public_key::storage_type parse_base58(const std::string& base58str)
    {
-      constexpr auto legacy_prefix = config::public_key_legacy_prefix;
-      if(prefix_matches(legacy_prefix, base58str) && base58str.find('_') == std::string::npos ) {
-         auto sub_str = base58str.substr(const_strlen(legacy_prefix));
+      auto prefix_len = get_acceptable_prefix_len(base58str);
+      if (prefix_len && base58str.find('_') == std::string::npos ) {
+         auto sub_str = base58str.substr(prefix_len);
          using default_type = typename public_key::storage_type::template type_at<0>;
          using data_type = default_type::data_type;
          using wrapper = checksummed_data<data_type>;
@@ -74,7 +81,7 @@ namespace fc { namespace crypto {
 
       auto which = _storage.which();
       if (which == 0) {
-         return std::string(config::public_key_legacy_prefix) + data_str;
+         return std::string(config::public_key_opes_prefix) + data_str;
       } else {
          return std::string(config::public_key_base_prefix) + "_" + data_str;
       }
